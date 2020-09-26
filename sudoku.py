@@ -17,7 +17,8 @@ class Sudoku:
         array = [numbers[9*i:9*(i+1)] for i in range(9)]
         self.array = np.array(array)
         # find empty cells (useful for solving the sudoku)
-        self.zero_cells = [(i, j) for i in range(9) for j in range(9) if self.array[i, j] == 0]
+        zero_cells = [(i, j) for i in range(9) for j in range(9) if self.array[i, j] == 0]
+        self.options = {ij: [] for ij in zero_cells}
 
     def __repr__(self):
         """
@@ -52,6 +53,34 @@ class Sudoku:
             options = []
         return options
 
+    def limit_cell_options(self, i, j):
+        """
+        Limits the cell options in case an option is the only one in
+        its row, column or square.
+        """
+        # get index of empty cells in row, column and square (skip given cell)
+        row = [ij for ij in self.options if ij[0] == i and ij[1] != j]
+        col = [ij for ij in self.options if ij[1] == j and ij[0] != i]
+        si = int(i/3)*3
+        sj = int(j/3)*3
+        square = [ij for ij in self.options if si <= ij[0] and ij[0] < si+3]
+        square = [ij for ij in square if sj <= ij[1] and ij[1] < sj+3]
+        square = [ij for ij in square if ij[0] != i or ij[1] != j]
+        # get options for row, column and square
+        row_opts = [o for ij in row for o in self.options[ij]]
+        col_opts = [o for ij in col for o in self.options[ij]]
+        sq_opts = [o for ij in square for o in self.options[ij]]
+        # find cell options not present in row, column and square
+        not_in_row = [o for o in self.options[i, j] if o not in row_opts]
+        not_in_col = [o for o in self.options[i, j] if o not in col_opts]
+        not_in_sq = [o for o in self.options[i, j] if o not in sq_opts]
+        if len(not_in_row) == 1:
+            self.options[i, j] = not_in_row
+        elif len(not_in_col) == 1:
+            self.options[i, j] = not_in_col
+        elif len(not_in_sq) == 1:
+            self.options[i, j] = not_in_sq
+
     def iterate(self):
         """
         Looks for the options at all empty cells.
@@ -59,17 +88,24 @@ class Sudoku:
         """
         new_zeros = []
         n_sols = 0
-        for ij in self.zero_cells: # loops only over empty cells
-                options = self.get_cell_options(*ij)
-                if len(options) == 1:
-                    self.array[ij] = options[0]
+        self.options = {ij: self.get_cell_options(*ij) for ij in self.options}
+        [self.limit_cell_options(*ij) for ij in self.options]
+        for ij in self.options: # loops only over empty cells
+                if len(self.options[ij]) == 1:
+                    self.array[ij] = self.options[ij][0]
                     n_sols += 1
                 else:
                     new_zeros.append(ij)
-                # TODO: if the option is the only available in the row, column or square, it should be used.
-        self.zero_cells = new_zeros # update the empty cells list
+        self.options = {ij: self.options[ij] for ij in new_zeros} # update the empty cells list
         self.iterations += 1
         self.sol_evol.append(n_sols)
+
+    def print_options(self):
+        """
+        Prints a list of the options for each empty cell.
+        """
+        print("\nOptions for the empty cells:\n")
+        print("\n".join(f"{o}: {self.options[o]}" for o in self.options))
 
     def solve(self):
         """
@@ -81,7 +117,7 @@ class Sudoku:
         while n_zeros != n_zeros_old and n_zeros > 0:
             self.iterate()
             n_zeros_old = n_zeros
-            n_zeros = len(self.zero_cells)
+            n_zeros = len(self.options)
         if n_zeros == 0:
             print(f"The sudoku was solved with {self.iterations} iterations!")
         else:
@@ -111,7 +147,30 @@ if __name__ == "__main__":
               "003024000",
               "000007423",
            ]
-    ln = "".join(medium)
+    hard = [
+            "000000687",
+            "000000900",
+            "000608050",
+            "000000060",
+            "085120009",
+            "210046000",
+            "473000001",
+            "800090000",
+            "020007000",
+           ]
+    expert = [
+              "040005870",
+              "000000100",
+              "090000002",
+              "000070400",
+              "051300007",
+              "003006000",
+              "005002090",
+              "000508600",
+              "000064000",
+             ]
+    # source for sudokus: https://sudoku.com/es/normal/
+    ln = "".join(expert)
     print(f"\ninput: \"{ln}\"\n")
     sudoku = Sudoku(ln)
     print(f"sudoku:\n{sudoku}\n")
