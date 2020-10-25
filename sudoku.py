@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -124,6 +125,47 @@ class Sudoku:
             print(f"No solution was found for the sudoku. {self.iterations} iterations were performed.")
 
 
+class Plotter:
+
+    def __init__(self):
+        self.fig = plt.figure(figsize=(6, 6))
+        self.ax = self.fig.add_axes([0.05, 0.05, 0.9, 0.9])
+        self.ax.axis("equal")
+        self.ax.set_axis_off()
+        self._major_grid()
+        self._minor_grid()
+
+    def _major_grid(self):
+        for i in range(0, 28, 9):
+            # vertical line
+            self.ax.plot([i, i], [0, 27], lw=4, c="k")
+            # horizontal line
+            self.ax.plot([0, 27], [i, i], lw=4, c="k")
+
+    def _minor_grid(self):
+        for i in range(0, 28, 3):
+            # vertical line
+            self.ax.plot([i, i], [0, 27], lw=1, c="k")
+            # horizontal line
+            self.ax.plot([0, 27], [i, i], lw=1, c="k")
+
+    def _write_number(self, i, j, num):
+        self.ax.text(1.5+3*j, 25.5-3*i, num, ha="center", va="center", size=20)
+
+    def plot(self, sudoku):
+        for i in range(9):
+            for j in range(9):
+                if sudoku.array[i, j] != 0:
+                    self._write_number(i, j, sudoku.array[i, j])
+
+    def show(self):
+        plt.close(self.fig.number)
+        self.fig.show()
+
+    def save(self, path):
+        self.fig.savefig(path, dpi=200, bbox_inches="tight")
+
+
 if __name__ == "__main__":
     easy = [
             "030100496",
@@ -175,5 +217,9 @@ if __name__ == "__main__":
     sudoku = Sudoku(ln)
     print(f"sudoku:\n{sudoku}\n")
     #print(f"sudoku.array:\n{sudoku.array}\n")
-    print(f"Options for cell (2, 3): {sudoku.get_cell_options(2, 3)}\n")
-    sudoku.solve()
+    #print(f"Options for cell (2, 3): {sudoku.get_cell_options(2, 3)}\n")
+    #sudoku.solve()
+    plotter = Plotter()
+    plotter.plot(sudoku)
+    plotter.show()
+    plotter.save("test.png")
