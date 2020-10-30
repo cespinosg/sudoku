@@ -82,6 +82,13 @@ class Sudoku:
         elif len(not_in_sq) == 1:
             self.options[i, j] = not_in_sq
 
+
+    def get_options(self):
+        """
+        Get options for all empty cells.
+        """
+        self.options = {ij: self.get_cell_options(*ij) for ij in self.options}
+
     def iterate(self):
         """
         Looks for the options at all empty cells.
@@ -150,13 +157,19 @@ class Plotter:
             self.ax.plot([0, 27], [i, i], lw=1, c="k")
 
     def _write_number(self, i, j, num):
-        self.ax.text(1.5+3*j, 25.5-3*i, num, ha="center", va="center", size=20)
+        self.ax.text(1.5+3*j, 25.5-0.1-3*i, num, ha="center", va="center", size=20)
+
+    def _write_options(self, i, j, options):
+        for o in options:
+            self.ax.text(0.5+3*j+(o-1)%3, 26.5-0.05-3*i-int((o-1)/3), o, ha="center", va="center", size=7)
 
     def plot(self, sudoku):
         for i in range(9):
             for j in range(9):
                 if sudoku.array[i, j] != 0:
                     self._write_number(i, j, sudoku.array[i, j])
+                else:
+                    self._write_options(i, j, sudoku.options[(i, j)])
 
     def show(self):
         plt.close(self.fig.number)
@@ -218,6 +231,7 @@ if __name__ == "__main__":
     print(f"sudoku:\n{sudoku}\n")
     #print(f"sudoku.array:\n{sudoku.array}\n")
     #print(f"Options for cell (2, 3): {sudoku.get_cell_options(2, 3)}\n")
+    sudoku.get_options()
     #sudoku.solve()
     plotter = Plotter()
     plotter.plot(sudoku)
